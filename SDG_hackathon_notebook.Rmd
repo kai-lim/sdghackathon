@@ -52,27 +52,56 @@ sdg_data_sources <- sdg_data %>%
          siris="Siris"))
 
 table(sdg_data$system)
+
+
+SDG_names <- c(`SDG-01` = "1: No Poverty",
+               `SDG-02` = "2: Zero Hunger",
+               `SDG-03` = "3: Good Health & Well Being",
+               `SDG-04` = "4: Quality Education",
+               `SDG-05` = "5: Gender Equality",
+               `SDG-06` = "6: Clean Water & Sanitation",
+               `SDG-07` = "7: Affordable Clean Energy",
+               `SDG-08` = "8: Decent Work & Economy Growth",
+               `SDG-09` = "9: Industry, Innovation & Infrastructure",
+               `SDG-10` = "10: Reduced Inequalities",
+               `SDG-11` = "11: Sustainable Cities",
+               `SDG-12` = "12: Responsible Consumption & Production",
+               `SDG-13` = "13: Climate Action",
+               `SDG-14` = "14: Life Below Water",
+               `SDG-15` = "15: Life On Land",
+               `SDG-16` = "16: Peace & Justice")
+
 plot1<-sdg_data_sources %>% 
   ggplot(aes(x=system,y=count,color=system))+
   geom_point(aes(size=med_cost))+
   geom_segment(aes(x=system, xend=system, y=0, yend=count)) +
-  facet_wrap(~sdg)+
+  facet_wrap(~sdg,labeller = as_labeller(SDG_names, label_wrap_gen(width=20)))+
   theme_bw() +
   labs(title="Number of projects identified by each system",
        color="Query system",
-       size="Median approved funding\n(CHF)")+
+       size="Median approved funding\n(CHF)",
+       caption="Github:kai-lim")+
   theme(legend.position="right",
         axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
         axis.line.x = element_blank())+
   scale_y_continuous(name="Number of projects", limits=c(0,20000))+
-  scale_x_discrete(name="Query system used to detect SDGs")
+  scale_x_discrete(name="Query system used to detect SDGs")+
+  theme(strip.background = element_rect(fill=c("#CCB7AE")))
+
+plot1 
+
+# tried to add image but didn't work - can try after deadline.
+# ## read PNG file from web
+# png <- magick::image_read("~/OneDrive - King's College London/PhD/outside_PhD/SDG_Hackathon/Hackathon_project_folder/SDG_title.png")
+# ## turn image into `rasterGrob`
+# img <- grid::rasterGrob(png, interpolate = TRUE)
+# 
+# (plot1_1 <- plot1 +
+#   annotation_custom(img, ymin = 21.5, ymax = 30.5, xmin = 55, xmax = 65.5))
 
 
-
-plot1
-
-ggsave(file="SDG.png")
+ggsave(file="SDG_2.png", width=8,height=8)
 
 ```
 
