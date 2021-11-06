@@ -1,0 +1,127 @@
+---
+title: "SDG Hackathon"
+author: "Kai Lim"
+date: "05/11/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The goal of this data visualization hackathon is twofold:
+
+1. To better understand the commonalities and differences between the five query-based SDG labeling systems.
+
+2. To characterize the efforts of the Swiss research landscape to address the UN SDGs.
+
+```{r load libraries, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(ggalt) #needed for geom_dumbbell
+library(patchwork)
+library(magick)
+library(cowplot)
+library(ggthemes)
+```
+
+```{r load csvs}
+sdg_data<-read.csv("sdg_hackathon_data.csv")
+sdg_data_supp<-read.csv("supplementary_data.csv")
+```
+
+## Which type of SDG a project is in will be detected more easily by all sources?
+
+```{r}
+sdg_data_sources <- sdg_data %>%
+  select(project_number,start_date,end_date,sdg,system, approved_amount) %>% 
+  transform(start_date=as_date(start_date), end_date=as_date(end_date)) %>% 
+  mutate(duration=as.period(interval(ymd(start_date),ymd(end_date)),unit="days")@day) %>% 
+  filter(sdg!="SDG-17", approved_amount!="data not included in P3") %>%  #filter SDG-17 because some sources don't have it
+  group_by(sdg,system) %>% 
+  mutate(count=n()) %>% 
+  mutate(med_duration=median(duration)) %>% 
+  mutate(med_cost=median(as.numeric(approved_amount))) %>% 
+  mutate(system=recode(system, 
+         aurora="Aurora",
+         elsevier="Elsevier",
+         ontology="Ontology",
+         sdsn="SDSN",
+         siris="Siris"))
+
+table(sdg_data$system)
+plot1<-sdg_data_sources %>% 
+  ggplot(aes(x=system,y=count,color=system))+
+  geom_point(aes(size=med_cost))+
+  geom_segment(aes(x=system, xend=system, y=0, yend=count)) +
+  facet_wrap(~sdg)+
+  theme_bw() +
+  labs(title="Number of projects identified by each system",
+       color="Query system",
+       size="Median approved funding\n(CHF)")+
+  theme(legend.position="right",
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.line.x = element_blank())+
+  scale_y_continuous(name="Number of projects", limits=c(0,20000))+
+  scale_x_discrete(name="Query system used to detect SDGs")
+
+
+
+plot1
+
+ggsave(file="SDG.png")
+
+```
+
+Looking good, can consider changing the y-axis to cost or med_ instead. 
+change med_duration to cost perhaps?
+Do it tomorrow. 
+Consider using BBC's theme. 
+
+add a second axis: https://www.r-graph-gallery.com/line-chart-dual-Y-axis-ggplot2.html 
+
+
+```{r}
+funding_data<-sdg_data_sources %>% 
+  group_by(system, sdg) %>%
+  mutate(approved_amount=as.numeric(approved_amount)) %>% 
+  top_n(1, wt=approved_amount)%>% 
+    mutate(approved_amount_K=as.numeric(approved_amount/1000))
+
+# First ensure that the data feame is ordered by the start time
+#funding_data <- funding_data[order(funding_data$start_date),]
+
+# Now iterate through each row, calculating how many previous rows have
+# earlier starts but haven't yet finished when the current row starts.
+# Multiply this number by a small negative offset and add the 1.48 baseline value
+#funding_data$offset <- 1.48 - 0.03 * sapply(seq(nrow(funding_data)), function(i) {
+#   with(funding_data[seq(i),], length(which(start_date < start_date[i] & end_date > start_date[i])))
+#   })
+
+
+plot2<-funding_data %>% 
+  ggplot(aes(x=start_date, xend=end_date,y=as.numeric(reorder(approved_amount_K,start_date))))+
+  geom_segment(aes(color=system,yend=as.numeric(reorder(approved_amount_K,start_date))),
+              size = 2,
+              position = position_nudge(x = 0, y = 0),
+              lineend = "round") +
+  facet_wrap(~sdg)+
+  scale_y_continuous(name="Approved amount (in thousands)")+
+  theme_minimal()+
+  labs(title="Duration of projects with highest funding detected by each query system",
+       color="Query system used to detect SDGs",
+       x="Project start and end date")+
+  theme(legend.position = "bottom")
+
+plot2
+```
+
+
+
+```{r both plots tgt}
+plot1/plot2
+```
+

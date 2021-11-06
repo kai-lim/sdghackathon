@@ -1,5 +1,11 @@
 # SDG Hackathon - Visualizing Swiss Sustainable Development Goals
 
+# My submission
+
+<img align="right" src="sdg.png" width="200" height="200">
+
+
+
 ## Overview
 
 <img align="right" src="text2sdg_logo.png" width="200" height="200">
