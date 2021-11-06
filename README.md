@@ -2,7 +2,9 @@
 
 # My submission
 
-<img align="right" src="SDG_2.png" width="200" height="200">
+
+<img align="right" src="SDG_2.png">
+
 
 
 
